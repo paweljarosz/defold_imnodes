@@ -1,0 +1,30 @@
+[bootstrap]
+main_collection = /example/example_imnodes.collectionc
+render = /builtins/render/default.renderc
+
+[script]
+shared_state = 1
+
+[display]
+width = 1290
+height = 860
+
+[project]
+title = ImGui and ImNodes
+custom_resources = example/bundle/
+version = 0.1
+developer = Pawel Jarosz, Bjorn Ritzl, ocornut,  Nelarius
+
+[library]
+include_dirs = imgui
+
+[input]
+game_binding = /imgui/bindings/imgui.input_bindingc
+use_accelerometer = 0
+
+[ios]
+bundle_identifier = com.defold.imgui
+
+[android]
+package = com.defold.imgui
+

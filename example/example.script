@@ -1,0 +1,533 @@
+local JEDI = { "Luke", "Obi-Wan", "Yoda" }
+local SITH = { "Maul", "Vader", "Palpatine" }
+local IMN = require "imgui.imnodes.helper"
+
+
+local function set_style()
+	imgui.set_style_window_rounding(6)
+	imgui.set_style_frame_rounding(3)
+	imgui.set_style_scrollbar_rounding(10)
+	imgui.set_style_color(imgui.ImGuiCol_Text, 0.90, 0.90, 0.90, 0.90)
+	imgui.set_style_color(imgui.ImGuiCol_TextDisabled, 0.60, 0.60, 0.60, 1.00)
+	imgui.set_style_color(imgui.ImGuiCol_WindowBg, 0.09, 0.09, 0.15, 1.00)
+	imgui.set_style_color(imgui.ImGuiCol_PopupBg, 0.05, 0.05, 0.10, 0.85)
+	imgui.set_style_color(imgui.ImGuiCol_Border, 0.70, 0.70, 0.70, 0.65)
+	imgui.set_style_color(imgui.ImGuiCol_BorderShadow, 0.00, 0.00, 0.00, 0.00)
+	imgui.set_style_color(imgui.ImGuiCol_FrameBg, 0.00, 0.00, 0.01, 1.00)
+	imgui.set_style_color(imgui.ImGuiCol_FrameBgHovered, 0.90, 0.80, 0.80, 0.40)
+	imgui.set_style_color(imgui.ImGuiCol_FrameBgActive, 0.90, 0.65, 0.65, 0.45)
+	imgui.set_style_color(imgui.ImGuiCol_TitleBg, 0.00, 0.00, 0.00, 0.83)
+	imgui.set_style_color(imgui.ImGuiCol_TitleBgCollapsed, 0.40, 0.40, 0.80, 0.20)
+	imgui.set_style_color(imgui.ImGuiCol_TitleBgActive, 0.00, 0.00, 0.00, 0.87)
+	imgui.set_style_color(imgui.ImGuiCol_MenuBarBg, 0.01, 0.01, 0.02, 0.80)
+	imgui.set_style_color(imgui.ImGuiCol_ScrollbarBg, 0.20, 0.25, 0.30, 0.60)
+	imgui.set_style_color(imgui.ImGuiCol_ScrollbarGrab, 0.55, 0.53, 0.55, 0.51)
+	imgui.set_style_color(imgui.ImGuiCol_ScrollbarGrabHovered, 0.56, 0.56, 0.56, 1.00)
+	imgui.set_style_color(imgui.ImGuiCol_ScrollbarGrabActive, 0.56, 0.56, 0.56, 0.91)
+	imgui.set_style_color(imgui.ImGuiCol_CheckMark, 0.90, 0.90, 0.90, 0.83)
+	imgui.set_style_color(imgui.ImGuiCol_SliderGrab, 0.70, 0.70, 0.70, 0.62)
+	imgui.set_style_color(imgui.ImGuiCol_SliderGrabActive, 0.30, 0.30, 0.30, 0.84)
+	imgui.set_style_color(imgui.ImGuiCol_Button, 0.48, 0.72, 0.89, 0.49)
+	imgui.set_style_color(imgui.ImGuiCol_ButtonHovered, 0.50, 0.69, 0.99, 0.68)
+	imgui.set_style_color(imgui.ImGuiCol_ButtonActive, 0.80, 0.50, 0.50, 1.00)
+	imgui.set_style_color(imgui.ImGuiCol_Header, 0.30, 0.69, 1.00, 0.53)
+	imgui.set_style_color(imgui.ImGuiCol_HeaderHovered, 0.44, 0.61, 0.86, 1.00)
+	imgui.set_style_color(imgui.ImGuiCol_HeaderActive, 0.38, 0.62, 0.83, 1.00)
+	imgui.set_style_color(imgui.ImGuiCol_ResizeGrip, 1.00, 1.00, 1.00, 0.85)
+	imgui.set_style_color(imgui.ImGuiCol_ResizeGripHovered, 1.00, 1.00, 1.00, 0.60)
+	imgui.set_style_color(imgui.ImGuiCol_ResizeGripActive, 1.00, 1.00, 1.00, 0.90)
+	imgui.set_style_color(imgui.ImGuiCol_PlotLines, 1.00, 1.00, 1.00, 1.00)
+	imgui.set_style_color(imgui.ImGuiCol_PlotLinesHovered, 0.90, 0.70, 0.00, 1.00)
+	imgui.set_style_color(imgui.ImGuiCol_PlotHistogram, 0.90, 0.70, 0.00, 1.00)
+	imgui.set_style_color(imgui.ImGuiCol_PlotHistogramHovered, 1.00, 0.60, 0.00, 1.00)
+	imgui.set_style_color(imgui.ImGuiCol_TextSelectedBg, 0.00, 0.00, 1.00, 0.35)
+end
+
+local function makeData(self)
+	self.values_line = {}
+	self.values_hist = {}
+	for i=1, 60 do 
+		local data = math.random(1, 30)
+		self.values_hist[data] = (self.values_hist[data] or 0) + 1
+		table.insert(self.values_line, data)
+	end
+end
+
+function init(self)
+	self.counter = 0
+	self.show_demo_window = false
+	self.show_close_window = false
+	self.show_live_data = false
+	
+	imgui.set_ini_filename()
+	set_style()
+	local scale = 2
+	imgui.scale_all_sizes(scale)
+
+	self.values_line = {}
+	self.values_hist = {}
+	makeData(self)
+
+	local fontsize 		= 12.0 * scale
+	local fontsizebase 	= 12.0 * scale
+	self.fonts 	= {}
+	local regular_data, error = sys.load_resource("/example/bundle/fonts/Montserrat-Regular.ttf")
+	self.fonts["Regular"] = imgui.font_add_ttf_data(regular_data, #regular_data, fontsize, fontsizebase)
+	local bold_data, error = sys.load_resource("/example/bundle/fonts/Montserrat-Bold.ttf")
+	self.fonts["Bold"] = imgui.font_add_ttf_data(bold_data, #bold_data, fontsize, fontsizebase)
+	local italic_data, error = sys.load_resource("/example/bundle/fonts/Montserrat-Italic.ttf")
+	self.fonts["Italic"] = imgui.font_add_ttf_data(italic_data, #italic_data, fontsize, fontsizebase)
+	local bolditalic_data, error = sys.load_resource("/example/bundle/fonts/Montserrat-BoldItalic.ttf")
+	self.fonts["BoldItalic"] = imgui.font_add_ttf_data(bolditalic_data, #bolditalic_data, fontsize, fontsizebase)
+
+	-- Resource based Image 
+	local img1_data, error = sys.load_resource("/example/bundle/images/image1.png") 
+	self.image1 = imgui.image_load_data("image1", img1_data, #img1_data)
+
+	-- File based Image can be used on desktop platforms
+	-- self.image1 = imgui.image_load("example/images/image1.png")
+		
+	local img2_data, error = sys.load_resource("/example/bundle/images/image2.png") 
+	self.image2 = imgui.image_load_data("image2", img2_data, #img2_data)
+end
+
+local function close_window(self)
+	local flags = imgui.WINDOWFLAGS_NOMOVE
+	local full, open = imgui.begin_window("Close window", true, flags)
+	if full then
+		imgui.text("You can close this window, but cannot move")
+	end
+	imgui.end_window()
+	
+	if not open then
+		self.show_close_window = false
+	end
+end
+
+local function update_tab1(self)
+	imgui.text("This is some useful text.")
+	local changed, checked = imgui.checkbox("Demo window", self.show_demo_window)
+	if changed then
+		self.show_demo_window = checked
+	end
+
+	imgui.separator()
+
+	if imgui.button("Button") then
+		self.counter = self.counter + 1
+		local pos = go.get_position(go.get_id("/object"))
+		pos.x = pos.x + 10
+		go.animate("/object", "position", go.PLAYBACK_ONCE_FORWARD, pos, go.EASING_INOUTSINE, 1)
+	end
+	imgui.same_line()
+	imgui.text(("counter = %d"):format(self.counter))
+
+	imgui.separator()
+
+	local pos = go.get_position("object")
+	local changed, x, y, z = imgui.input_float3("pos", pos.x, pos.y, pos.z)
+	if changed then
+		pos.x = x
+		pos.y = y
+		pos.z = z
+		go.set_position(pos, "object")
+	end
+
+	local changed, x, y, z = imgui.input_int4("posi", pos.x, pos.y, pos.z, 0)
+	if changed then
+		pos.x = x
+		pos.y = y
+		pos.z = z
+		go.set_position(pos, "object")
+	end
+	
+	local changed, int = imgui.input_int("test int", self.int or 0)
+	if changed then
+		self.int = int
+	end
+
+	if imgui.button("open window with close button") then
+		self.show_close_window = true;
+	end
+
+	imgui.begin_table("table_example", 3)
+	imgui.table_setup_column("FIRST NAME")
+	imgui.table_setup_column("LAST NAME")
+	imgui.table_setup_column("AGE")
+	imgui.table_headers_row()
+
+	imgui.table_next_row()
+	imgui.table_next_column()
+	imgui.text("Bilbo")
+	imgui.table_next_column()
+	imgui.text("Baggins")
+	imgui.table_next_column()
+	imgui.text("129")
+	
+	imgui.table_next_row()
+	imgui.table_next_column()
+	imgui.text("Frodo")
+	imgui.table_next_column()
+	imgui.text("Baggins")
+	imgui.table_next_column()
+	imgui.text("51")
+	
+	imgui.end_table()
+end
+
+local function update_tab2(self)
+	local selected = imgui.tree_node("root")
+	if selected then
+		imgui.bullet()
+		self.foo_selected = imgui.selectable("foo", self.foo_selected)
+		imgui.bullet()
+		self.bar_selected = imgui.selectable("bar", self.bar_selected)
+		imgui.tree_pop()
+	end
+
+
+	-- this is the old way of creating combo boxes
+	-- it still exists in the ImGUI API since it's a quick way ti create a combo box
+	local changed, jedi = imgui.combo("Jedi##array", self.selected_jedi or 1, JEDI)
+	if changed then
+		self.selected_jedi = jedi
+	end
+
+	-- new way of creating combo boxes with a begin and end function
+	if imgui.begin_combo("Jedi##selectable", "Select a Jedi") then
+		for i=1,#JEDI do
+			if imgui.selectable(JEDI[i], i == (self.selected_jedi or 1)) then
+				self.selected_jedi = i
+			end
+		end
+		imgui.end_combo()
+	end
+
+	imgui.separator()
+
+	local testdbl = self.testdbl or 0
+	local changed, value = imgui.input_double("test double", testdbl, 0.0001, 0.01, 5)
+	if changed then
+		self.testdbl = value
+	end
+	
+	local progress = self.progress or 0
+	local changed, p = imgui.input_float("progress float", progress, 0.01, 1.0, 3)
+	if changed then
+		self.progress = p
+		progress = p
+	end
+
+	imgui.separator()
+	imgui.draw_progress(progress, -1, 0.0)
+
+	imgui.push_id("first")
+	if imgui.button("Same name") then
+		pprint("first same button")
+	end
+	imgui.pop_id()
+
+	imgui.push_id("second")
+	if imgui.button("Same name") then
+		pprint("second same button")
+	end
+	imgui.pop_id()
+end
+
+local function update_tab3(self)
+
+	local changed, checked = imgui.checkbox("Live Data", self.show_live_data)
+	if changed then
+		self.show_live_data = checked
+	end
+
+	if(self.show_live_data == true) then 
+		makeData(self)
+	end
+	imgui.separator()
+	
+	imgui.text_colored(" Data Plot ", 1, 0, 0, 1 )
+	imgui.plot_lines( "Data", 0, 150, 40, self.values_line )
+
+	imgui.separator()
+	
+	imgui.text_colored(" Data Histogram ", 0, 1, 0, 1 )
+	imgui.plot_histogram( "Histogram", 0, 150, 40, self.values_hist )
+
+	imgui.separator()
+end
+
+-- Example images and font styles
+local function update_tab4(self)
+
+	imgui.font_push(self.fonts["Regular"])
+	imgui.text_colored("Example Text Regular", 1, 1, 1, 1 )
+	imgui.font_pop()
+	imgui.separator()
+	imgui.font_push(self.fonts["Bold"])
+	imgui.text_colored("Example Text Bold", 1, 1, 1, 1 )
+	imgui.font_pop()
+	imgui.separator()
+	imgui.font_push(self.fonts["Italic"])
+	imgui.text_colored("Example Text Italic", 1, 1, 1, 1 )
+	imgui.font_pop()
+	imgui.separator()
+	imgui.font_push(self.fonts["BoldItalic"])
+	imgui.text_colored("Example Text Bold Italic", 1, 1, 1, 1 )
+	imgui.font_pop()
+	imgui.separator()
+	
+	imgui.font_push(self.fonts["Regular"])
+	imgui.text_colored("image stretched", 1, 1, 1, 1 )
+	imgui.image_add(self.image1, 150,20)
+
+	imgui.text_colored("image original aspect", 1, 1, 1, 1 )
+	imgui.image_add(self.image2, 150,150)
+	imgui.font_pop()
+end
+
+
+local function update_tab5(self)
+	if imgui.tree_node("Jedi vs Sith") then
+		imgui.text("Right click for some info")
+		for i=1,#JEDI do
+			imgui.tree_node(JEDI[i], imgui.TREENODE_LEAF + imgui.TREENODE_NO_TREE_PUSH_ON_OPEN)
+			if imgui.begin_dragdrop_source(imgui.DROPFLAGS_SOURCEALLOWNULLID) then
+				imgui.set_dragdrop_payload("jedi", JEDI[i])
+				imgui.end_dragdrop_source()
+			end
+			if imgui.begin_popup_context_item("jedipop" .. i) then
+				imgui.text("This is a Jedi")
+				imgui.end_popup()
+			end
+		end
+		for i=1,#SITH do
+			imgui.tree_node(SITH[i], imgui.TREENODE_LEAF + imgui.TREENODE_NO_TREE_PUSH_ON_OPEN)
+			if imgui.begin_dragdrop_source(imgui.DROPFLAGS_SOURCEALLOWNULLID) then
+				imgui.set_dragdrop_payload("sith", SITH[i])
+				imgui.end_dragdrop_source()
+			end
+			if imgui.begin_popup_context_item("sithpop" .. i) then
+				imgui.text("This is a Sith")
+				imgui.end_popup()
+			end
+		end
+		imgui.tree_pop()
+	end
+	
+	imgui.separator()
+	
+	imgui.text("Drop Jedi and Sith here")
+	if imgui.begin_dragdrop_target() then
+		if imgui.accept_dragdrop_payload("jedi") then
+			self.counter = self.counter + 1
+		elseif imgui.accept_dragdrop_payload("sith") then
+			self.counter = self.counter - 1
+		end
+		imgui.end_dragdrop_target()
+	end
+	imgui.text("Counter " .. self.counter)
+	
+end
+
+local function main_menu_bar(self)
+	if imgui.begin_main_menu_bar() then
+		if imgui.begin_menu("File") then
+			if imgui.menu_item("Quit", "Ctrl+Q") then
+				sys.exit(0)
+			end
+
+			imgui.end_menu()
+		end
+
+		if imgui.begin_menu("View") then
+			local clicked = imgui.menu_item("Show Demo Window", nil, self.show_demo_window)
+			if clicked then
+				self.show_demo_window = not self.show_demo_window
+			end
+
+			imgui.end_menu()
+		end
+
+		if imgui.begin_menu("About") then
+			imgui.menu_item("Defold v" .. sys.get_engine_info().version, nil, nil, false)
+
+			imgui.end_menu()
+		end
+
+		imgui.end_main_menu_bar()
+	end
+end
+
+local function nested_menu(self)
+	if imgui.begin_menu("Nested Menu") then
+		imgui.menu_item("Nested Item")
+		nested_menu(self)
+		imgui.end_menu()
+	end
+end
+
+local function menu_bar(self)
+	if imgui.begin_menu_bar() then
+		if imgui.begin_menu("Menu") then
+			if imgui.menu_item("Menu Item") then
+				print("Clicked 'Menu Item'")
+			end
+
+			-- Shortcuts are only visual, ImGui doesn't currently use them
+			imgui.menu_item("Has Shortcut", "Ctrl+A")
+
+			local changed, active = imgui.menu_item("Toggleable Item", nil, self.toggle_item_active)
+			if changed then
+				self.toggle_item_active = active
+				print("'Toggleable Item' is " .. (self.toggle_item_active and "on" or "off"))
+			end
+
+			imgui.menu_item("Disabled Item", nil, nil, false)
+
+			if imgui.begin_menu("Nested Menu") then
+				imgui.menu_item("Item")
+				nested_menu(self)
+				imgui.end_menu()
+			end
+
+			if imgui.menu_item("Click Me!") then
+				sys.exit(0)
+			end
+
+			imgui.end_menu()
+		end
+
+		if imgui.begin_menu("Other Menu") then
+			if imgui.menu_item("Other Menu Item") then
+				print("Clicked 'Other Menu Item'")
+			end
+			imgui.end_menu()
+		end
+
+		imgui.end_menu_bar()
+	end
+end
+
+
+-- ImNodes
+local Nodes = {}
+Nodes[1] = IMN.Node_Templates.Value(1)
+Nodes[2] = IMN.Node_Templates.Add(2)
+Nodes[3] = IMN.Node_Templates.Value(3)
+Nodes[4] = IMN.Node_Templates.Modify(4)
+
+local Links = {}
+Links[1] = {id = 10001, from = Nodes[1].outputs[1].id, to = Nodes[2].inputs[1].id}
+Links[2] = {id = 10002, from = Nodes[3].outputs[1].id, to = Nodes[4].inputs[1].id}
+Links[3] = {id = 10003, from = Nodes[4].outputs[1].id, to = Nodes[2].inputs[2].id}
+
+local button_text = "Click me"
+local button_text2 = "Click me"
+
+function update(self, dt)
+	main_menu_bar(self)
+
+	if self.show_demo_window then
+		imgui.demo()
+	end
+
+	if self.show_close_window then
+		close_window(self)
+	end
+
+	imgui.begin_window("Hello, world!", nil, imgui.WINDOWFLAGS_MENUBAR)
+	menu_bar(self)
+	imgui.begin_tab_bar("tabs")
+
+	local tab1_open = imgui.begin_tab_item("Tab1")
+	if tab1_open then
+		update_tab1(self)
+		imgui.end_tab_item()
+	end
+
+	local tab2_open = imgui.begin_tab_item("Tab2")
+	if tab2_open then
+		update_tab2(self)
+		imgui.end_tab_item()
+	end
+
+	local tab3_open = imgui.begin_tab_item("Tab3")
+	if tab3_open then
+		update_tab3(self)
+		imgui.end_tab_item()
+	end
+
+	local tab4_open = imgui.begin_tab_item("Tab4")
+	if tab4_open then
+		update_tab4(self)
+		imgui.end_tab_item()
+	end
+
+	local tab5_open = imgui.begin_tab_item("Tab5")
+	if tab5_open then
+		update_tab5(self)
+		imgui.end_tab_item()
+	end
+
+	imgui.end_tab_bar()
+	imgui.end_window()
+
+	imgui.begin_window("Node Editor", nil, imgui.WINDOWFLAGS_MENUBAR)
+		imgui.begin_node_editor()
+			for _, node in pairs(Nodes) do
+				if node.styles then
+					for _, element in pairs(node.styles) do	
+						for i, c in pairs(element) do
+							print("C", node.id, i, c.r, c.g, c.b, c.a)
+							imgui.push_node_color_style(i, c.r, c.g, c.b, c.a)
+						end
+					end
+				end
+				imgui.begin_node(node.id)
+					if node.title then
+						imgui.begin_node_title_bar()
+							imgui.text(node.title)
+						imgui.end_node_title_bar()
+					end
+					if node.inputs then
+						for _, input in pairs(node.inputs) do
+							imgui.begin_input_attribute(input.id)
+								if input.text then
+									imgui.text(input.text)
+								end
+								if input.input then
+									imgui.input_text("A", "B")
+								end
+							imgui.end_input_attribute()
+						end
+					end
+					if node.outputs then
+						for _, output in pairs(node.outputs) do
+							imgui.begin_output_attribute(output.id)
+							if output.text then
+								imgui.text(output.text)
+							end
+							if output.output then
+								imgui.input_text(output.output.label, output.output.text)
+							end
+							imgui.end_output_attribute()
+						end
+					end
+				imgui.end_node()
+				if node.style then
+					for _, element in pairs(node.styles) do
+						for _, _ in pairs(element) do
+							imgui.pop_node_color_style()
+						end
+					end
+				end
+			end
+
+			for _, link in pairs(Links) do
+				imgui.node_link(link.id, link.from, link.to)
+			end
+		imgui.end_node_editor()
+	imgui.end_window()
+	
+end

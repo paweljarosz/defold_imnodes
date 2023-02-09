@@ -1,0 +1,49 @@
+-- Make local access to globals
+local require, pairs, imgui = require, pairs, imgui
+
+local setup = require "imnodes.setup"
+local node_helper = require "imnodes.node_helper"
+local node_templates = require "imnodes.node_templates"
+local main_menu_bar = require "imnodes.menu_bar"
+local uid = require "uid.uid"
+
+-- ImNodes - example nodes
+local Nodes_Config = {}
+Nodes_Config[1] = {"Value"}
+Nodes_Config[2] = {"Add"}
+Nodes_Config[3] = {"Value"}
+Nodes_Config[4] = {"Modify"}
+
+local Nodes = {}
+local Links = {}
+
+function init(self)
+	Nodes = node_helper.create_nodes_from_config(Nodes_Config, node_templates)
+
+	imgui.set_ini_filename()
+	setup.set_default_style()
+end
+
+function update(self, dt)
+	Links = main_menu_bar.handle(Nodes, Links, Nodes_Config)
+	setup.set_size_once()
+
+	-- Indentation is intentional (begin-end pairs)
+	imgui.begin_window("Node Editor", nil, imgui.WINDOWFLAGS_MENUBAR)
+		imgui.begin_node_editor()
+			for _, node in pairs(Nodes) do
+				node_helper.push_styles(node)
+				imgui.begin_node(node.id)
+					node_helper.set_node_title(node)
+					node_helper.set_node_inputs(node)
+					node_helper.set_node_outputs(node)
+				imgui.end_node()
+				node_helper.pop_styles(node)
+			end
+			for _, link in pairs(Links) do
+				imgui.node_link(link[1], link[2], link[3])
+			end
+		imgui.end_node_editor()
+		Links = node_helper.handle_link_creation(Links)
+	imgui.end_window()
+end
